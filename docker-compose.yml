@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  kernel-fusion-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kernel-fusion:latest
+    container_name: kernel-fusion-dev
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - .:/workspace
+      - ~/.gitconfig:/root/.gitconfig:ro
+      - ~/.ssh:/root/.ssh:ro
+    ports:
+      - "8888:8888"  # Jupyter
+      - "6006:6006"  # TensorBoard
+    stdin_open: true
+    tty: true
+    working_dir: /workspace
+    command: /bin/bash
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kernel-fusion:latest
+    container_name: kernel-fusion-jupyter
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - .:/workspace
+    ports:
+      - "8888:8888"
+    working_dir: /workspace
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''

@@ -1,0 +1,58 @@
+# CPU-optimized requirements for MacBook Pro development
+# Core deep learning frameworks (CPU versions)
+torch>=2.0.0
+torchvision
+torchaudio
+# Note: Triton is not available for CPU/Mac, so we'll use CPU alternatives
+
+# Apple Silicon optimization (if available)
+# Note: These will be installed conditionally
+# torch-audio  # MPS backend support
+
+# Scientific computing
+numpy>=1.21.0
+scipy
+matplotlib
+seaborn
+pandas
+
+# Development tools
+jupyter
+jupyterlab
+notebook
+ipywidgets
+black
+flake8
+mypy
+pre-commit
+pytest
+pytest-cov
+
+# CPU kernel development
+ninja
+pybind11[global]
+setuptools
+wheel
+packaging
+numba  # JIT compilation for CPU
+cython  # For C extensions
+cffi    # C Foreign Function Interface
+
+# CUDA development tools (for when moving to GPU)
+# These will be conditionally available:
+# pycuda  # Direct CUDA programming
+# cupy-cuda12x  # NumPy-like interface for CUDA
+
+# Monitoring and visualization
+tensorboard
+wandb
+tqdm
+
+# Additional utilities
+h5py
+pillow
+requests
+
+# CPU performance libraries
+mkl  # Intel Math Kernel Library (if available)
+openblas  # Alternative BLAS implementation

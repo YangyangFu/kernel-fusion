@@ -1,0 +1,74 @@
+# CPU-only Docker setup for MacBook Pro
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    wget \
+    vim \
+    nano \
+    htop \
+    libblas-dev \
+    liblapack-dev \
+    libhdf5-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip
+
+# Install PyTorch CPU version and other dependencies
+RUN pip install --no-cache-dir \
+    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
+    numpy \
+    scipy \
+    matplotlib \
+    seaborn \
+    pandas \
+    jupyter \
+    jupyterlab \
+    notebook \
+    ipywidgets \
+    tqdm \
+    pytest \
+    black \
+    flake8 \
+    mypy \
+    pre-commit \
+    tensorboard \
+    wandb \
+    numba
+
+# Install kernel development tools
+RUN pip install --no-cache-dir \
+    ninja \
+    pybind11[global] \
+    setuptools \
+    wheel \
+    packaging
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy project files
+COPY . /workspace/
+
+# Create directories for development
+RUN mkdir -p /workspace/kernels \
+             /workspace/tests \
+             /workspace/benchmarks \
+             /workspace/examples \
+             /workspace/notebooks
+
+# Expose ports for Jupyter and TensorBoard
+EXPOSE 8888 6006
+
+# Set up development environment
+CMD ["/bin/bash"]

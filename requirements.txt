@@ -1,0 +1,46 @@
+# Core deep learning frameworks
+torch>=2.0.0
+torchvision
+torchaudio
+triton>=2.0.0
+
+# CUDA and GPU computing
+pycuda
+cupy-cuda12x
+numba
+
+# Scientific computing
+numpy>=1.21.0
+scipy
+matplotlib
+seaborn
+pandas
+
+# Development tools
+jupyter
+jupyterlab
+notebook
+ipywidgets
+black
+flake8
+mypy
+pre-commit
+pytest
+pytest-cov
+
+# Kernel development
+ninja
+pybind11[global]
+setuptools
+wheel
+packaging
+
+# Monitoring and visualization
+tensorboard
+wandb
+tqdm
+
+# Additional utilities
+h5py
+pillow
+requests
