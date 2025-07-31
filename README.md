@@ -509,22 +509,6 @@ These patterns appear in most transformer and CNN architectures and provide sign
 
 ---
 
-## 🧪 Available Operations
-
-### Elementwise Operations
-- `elementwise_add_relu(a, b)` - Fused addition + ReLU
-- `elementwise_mul_tanh(a, b)` - Fused multiplication + Tanh  
-- `fused_bias_gelu(input, bias)` - Fused bias addition + GELU
-
-### Reduction Operations
-- `reduce_sum_squared(input, dim)` - Fused square + sum reduction
-- `reduce_mean_abs(input, dim)` - Fused absolute value + mean reduction
-
-### Complex Fusion Operations
-- `fused_layer_norm_relu(input, ...)` - Fused layer normalization + ReLU
-- `fused_gelu_dropout(input, p, training)` - Fused GELU + dropout
-- `fused_attention_score(query, key, scale)` - Fused attention score computation
-
 ## 📊 Performance
 
 Example performance improvements on NVIDIA A100:
