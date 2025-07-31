@@ -1,6 +1,52 @@
+# Build directories
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# CUDA compilation
+*.fatbin
+*.cubin
+*.ptx
 *.i
 *.ii
 *.gpu
-*.ptx
-*.cubin
-*.fatbin
+*.sass
+
+# C++ compilation
+*.o
+*.so
+*.dll
+*.dylib
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation
+docs/_build/
+docs/api/
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# OS
+.DS_Store
+Thumbs.db
