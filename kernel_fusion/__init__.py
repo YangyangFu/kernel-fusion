@@ -2,6 +2,9 @@
 from .ops import *
 from .kernels import *
 
+# Import automatic conversion utilities
+from .auto_convert import auto_convert_model, ModelConverter
+
 __version__ = "0.1.0"
 __author__ = "Your Name"
 

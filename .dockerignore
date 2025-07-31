@@ -1,45 +1,72 @@
-# Git
-.git
+# Git files
+.git/
 .gitignore
+.gitattributes
 
-# Python
-__pycache__
+# Build artifacts
+build/
+dist/
+*.egg-info/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env
-pip-log.txt
-pip-delete-this-directory.txt
-.tox
+*.so
+*.dylib
+*.dll
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Documentation build
+docs/_build/
+docs/build/
+*.pdf
+
+# Test artifacts
+.pytest_cache/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
+htmlcov/
+.tox/
+.cache/
+
+# Virtual environments
+venv/
+env/
+.env
+.venv/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Docker files (exclude from build context to avoid recursion)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Log files
 *.log
-.git
-.mypy_cache
-.pytest_cache
-.hypothesis
+logs/
 
-# Documentation
-docs/_build
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
 
-# PyCharm
-.idea
-
-# VSCode
-.vscode
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# OS
+# OS specific files
 .DS_Store
 .DS_Store?
 ._*
@@ -47,6 +74,47 @@ docs/_build
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Python specific
+*.egg
+*.egg-info/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Benchmark results (keep in host, not in image)
+benchmark_results/
+results/
+
+# Large datasets (if any)
+data/
+datasets/
+*.h5
+*.hdf5
+*.npz
+
+# Model files
+*.pth
+*.pt
+*.onnx
+*.pb
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Configuration files with sensitive data
+.env.local
+.env.production
+config.local.*
 
 # Build artifacts
 build/

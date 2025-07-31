@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # Development environment with full toolchain
+  kernel-fusion-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-dev
+    volumes:
+      # Mount source code for live development
+      - .:/workspace:z
+      # Cache pip packages to speed up reinstalls
+      - pip-cache:/root/.cache/pip
+      # Cache CMake builds to speed up compilation
+      - cmake-cache:/workspace/build
+      # Cache pytest results
+      - pytest-cache:/workspace/.pytest_cache
+    working_dir: /workspace
+    environment:
+      - CUDA_VISIBLE_DEVICES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # Development environment variables
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+      - CUDA_LAUNCH_BLOCKING=1
+    stdin_open: true
+    tty: true
+    command: bash
+    networks:
+      - kernel-fusion-net
+
+  # Production-ready container
+  kernel-fusion-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: kernel-fusion:latest
+    container_name: kernel-fusion-prod
+    environment:
+      - CUDA_VISIBLE_DEVICES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    runtime: nvidia
+    networks:
+      - kernel-fusion-net
+
+  # Jupyter notebook server for interactive development
+  kernel-fusion-jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/workspace:z
+      - jupyter-data:/root/.jupyter
+      - pip-cache:/root/.cache/pip
+    working_dir: /workspace
+    environment:
+      - CUDA_VISIBLE_DEVICES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+    runtime: nvidia
+    command: >
+      bash -c "setup-dev-env &&
+               jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+    networks:
+      - kernel-fusion-net
+
+  # Testing environment
+  kernel-fusion-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-test
+    volumes:
+      - .:/workspace:z
+      - pip-cache:/root/.cache/pip
+      - pytest-cache:/workspace/.pytest_cache
+    working_dir: /workspace
+    environment:
+      - CUDA_VISIBLE_DEVICES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+    runtime: nvidia
+    command: >
+      bash -c "setup-dev-env &&
+               python -m pytest tests/ -v --tb=short"
+    networks:
+      - kernel-fusion-net
+
+  # Benchmarking environment
+  kernel-fusion-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-benchmark
+    volumes:
+      - .:/workspace:z
+      - benchmark-results:/workspace/benchmark_results
+      - pip-cache:/root/.cache/pip
+    working_dir: /workspace
+    environment:
+      - CUDA_VISIBLE_DEVICES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+    runtime: nvidia
+    command: >
+      bash -c "setup-dev-env &&
+               python examples/benchmark_fusion.py"
+    networks:
+      - kernel-fusion-net
+
+volumes:
+  pip-cache:
+  cmake-cache:
+  pytest-cache:
+  jupyter-data:
+  benchmark-results:
+
+networks:
+  kernel-fusion-net:
+    driver: bridge

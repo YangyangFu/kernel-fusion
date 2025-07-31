@@ -1,0 +1,73 @@
+# Production Dockerfile for Kernel Fusion Library
+# Multi-stage build for optimized production image
+FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-devel AS builder
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    ninja-build \
+    g++ \
+    gcc \
+    libomp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python build dependencies
+RUN pip install --no-cache-dir \
+    numpy>=1.20.0 \
+    pybind11>=2.6.0 \
+    wheel \
+    setuptools
+
+# Copy source code
+WORKDIR /build
+COPY . .
+
+# Build the package
+RUN python setup.py bdist_wheel
+
+# Production stage - minimal runtime image
+FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+
+# Set environment variables
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+ENV PYTHONUNBUFFERED=1
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y \
+    # Runtime libraries only
+    libomp5 \
+    # Clean up
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install Python runtime dependencies
+RUN pip install --no-cache-dir \
+    numpy>=1.20.0
+
+# Copy built wheel from builder stage
+COPY --from=builder /build/dist/*.whl /tmp/
+
+# Install the kernel-fusion package
+RUN pip install /tmp/*.whl && rm /tmp/*.whl
+
+# Create non-root user for security
+RUN groupadd -r kernelfusion && useradd -r -g kernelfusion kernelfusion
+USER kernelfusion
+
+# Set working directory
+WORKDIR /app
+
+# Verify installation
+RUN python -c "import kernel_fusion as kf; print(f'Kernel Fusion installed: {kf.__version__}'); print(f'CUDA available: {kf.CUDA_AVAILABLE}'); print(f'Extension loaded: {kf.EXTENSION_LOADED}')"
+
+# Default command
+CMD ["python"]
