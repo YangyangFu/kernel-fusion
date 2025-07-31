@@ -7,17 +7,34 @@ import torch
 import math
 from torch.utils.cpp_extension import load_inline
 
-# CUDA kernel source code
+# CUDA kernel source code with debugging features
 cuda_source = """
 #include <torch/extension.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
+#include <stdio.h>
 
 #define BLOCK_SIZE 256
 #define WARP_SIZE 32
 
-// Forward pass kernel
+// Debug macro - only active in debug builds
+#ifdef DEBUG_KERNEL
+#define DEBUG_PRINT(fmt, ...) printf("[Block %d, Thread %d]: " fmt "\\n", blockIdx.x, threadIdx.x, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINT(fmt, ...)
+#endif
+
+// Check for CUDA errors
+#define CHECK_CUDA_ERROR(val) check_cuda((val), #val, __FILE__, __LINE__)
+void check_cuda(cudaError_t result, char const* const func, const char* const file, int const line) {
+    if (result) {
+        fprintf(stderr, "CUDA error at %s:%d code=%d(%s) \\"%s\\" \\n",
+                file, line, static_cast<unsigned int>(result), cudaGetErrorString(result), func);
+    }
+}
+
+// Forward pass kernel with debugging
 __global__ void layernorm_forward_kernel(
     const float* __restrict__ input,
     const float* __restrict__ weight,
@@ -34,10 +51,22 @@ __global__ void layernorm_forward_kernel(
     int batch_idx = blockIdx.x;
     int seq_idx = blockIdx.y;
     
-    if (batch_idx >= batch_size || seq_idx >= seq_len) return;
+    // Bounds checking with debug output
+    if (batch_idx >= batch_size || seq_idx >= seq_len) {
+        DEBUG_PRINT("Out of bounds: batch_idx=%d, seq_idx=%d", batch_idx, seq_idx);
+        return;
+    }
+    
+    DEBUG_PRINT("Processing batch=%d, seq=%d, hidden_size=%d", batch_idx, seq_idx, hidden_size);
     
     // Calculate base offset for this sequence position
     int base_offset = batch_idx * seq_len * hidden_size + seq_idx * hidden_size;
+    
+    // Bounds check for offset
+    if (base_offset < 0 || base_offset >= batch_size * seq_len * hidden_size) {
+        DEBUG_PRINT("Invalid base_offset: %d", base_offset);
+        return;
+    }
     
     // Shared memory for reductions
     __shared__ float shared_sum[BLOCK_SIZE];
@@ -67,16 +96,30 @@ __global__ void layernorm_forward_kernel(
     __syncthreads();
     sum_sq = BlockReduce(temp_storage).Sum(sum_sq);
     
-    // Calculate mean and variance
+    // Calculate mean and variance with validation
     if (threadIdx.x == 0) {
         float local_mean = sum / hidden_size;
         float local_var = (sum_sq / hidden_size) - (local_mean * local_mean);
+        
+        // Ensure variance is non-negative
+        if (local_var < 0.0f) {
+            DEBUG_PRINT("Warning: negative variance %f, clamping to 0", local_var);
+            local_var = 0.0f;
+        }
+        
         float local_rstd = rsqrtf(local_var + eps);
+        
+        // Validate computed values
+        if (!isfinite(local_mean) || !isfinite(local_rstd)) {
+            DEBUG_PRINT("Warning: non-finite values - mean=%f, rstd=%f", local_mean, local_rstd);
+        }
         
         // Store statistics
         int stats_offset = batch_idx * seq_len + seq_idx;
         mean[stats_offset] = local_mean;
         rstd[stats_offset] = local_rstd;
+        
+        DEBUG_PRINT("Computed stats: mean=%f, var=%f, rstd=%f", local_mean, local_var, local_rstd);
     }
     __syncthreads();
     
@@ -266,21 +309,32 @@ std::vector<torch::Tensor> layernorm_backward(
 class CUDALayerNorm:
     """CUDA-accelerated LayerNorm implementation"""
     
-    def __init__(self):
+    def __init__(self, debug=False):
         self.module = None
-        self._compile_cuda_kernel()
+        self.debug = debug
+        self._compile_cuda_kernel(debug)
     
-    def _compile_cuda_kernel(self):
+    def _compile_cuda_kernel(self, debug=False):
         """Compile the CUDA kernel using PyTorch's JIT compilation"""
         try:
+            # Debug vs Release compilation flags
+            if debug:
+                cuda_flags = ['-g', '-G', '-O0', '-lcub', '--ptxas-options=-v', '-DDEBUG_KERNEL']
+                cpp_flags = ['-g', '-O0']
+                print("Compiling in DEBUG mode with debugging symbols...")
+            else:
+                cuda_flags = ['-O3', '--use_fast_math', '-lcub']
+                cpp_flags = ['-O3']
+                print("Compiling in RELEASE mode with optimizations...")
+            
             self.module = load_inline(
                 name='layernorm_cuda',
                 cpp_sources=[cpp_source],
                 cuda_sources=[cuda_source],
                 functions=['layernorm_forward', 'layernorm_backward'],
                 verbose=True,
-                extra_cuda_cflags=['-O3', '--use_fast_math', '-lcub'],
-                extra_cflags=['-O3']
+                extra_cuda_cflags=cuda_flags,
+                extra_cflags=cpp_flags
             )
             print("LayerNorm CUDA kernel compiled successfully!")
         except Exception as e:
@@ -290,7 +344,7 @@ class CUDALayerNorm:
     
     def forward(self, x, weight=None, bias=None, eps=1e-5):
         """
-        Forward pass of LayerNorm
+        Forward pass of LayerNorm with debugging
         
         Args:
             x: Input tensor [batch_size, seq_len, hidden_size]
@@ -301,6 +355,22 @@ class CUDALayerNorm:
         Returns:
             Tuple of (output, mean, rstd) for backward pass
         """
+        # Input validation
+        if not x.is_contiguous():
+            if self.debug:
+                print("⚠️  Input tensor is not contiguous, making contiguous...")
+            x = x.contiguous()
+        
+        if x.dim() != 3:
+            raise ValueError(f"Expected 3D input tensor, got {x.dim()}D")
+        
+        if self.debug:
+            print(f"Input shape: {x.shape}, device: {x.device}, dtype: {x.dtype}")
+            if torch.isnan(x).any():
+                print("⚠️  Input contains NaN values!")
+            if torch.isinf(x).any():
+                print("⚠️  Input contains Inf values!")
+        
         if self.module is not None and x.is_cuda:
             # Use compiled CUDA kernel
             if weight is None:
@@ -308,11 +378,30 @@ class CUDALayerNorm:
             if bias is None:
                 bias = torch.zeros(x.size(-1), device=x.device, dtype=x.dtype)
             
-            return self.module.layernorm_forward(
-                x.contiguous(), weight.contiguous(), bias.contiguous(), eps
-            )
+            if self.debug:
+                print(f"Using CUDA kernel with weight shape: {weight.shape}, bias shape: {bias.shape}")
+            
+            try:
+                result = self.module.layernorm_forward(
+                    x.contiguous(), weight.contiguous(), bias.contiguous(), eps
+                )
+                
+                if self.debug:
+                    print("✅ CUDA kernel execution completed")
+                    output, mean, rstd = result
+                    print(f"Output stats: min={output.min():.6f}, max={output.max():.6f}, mean={output.mean():.6f}")
+                
+                return result
+                
+            except Exception as e:
+                print(f"❌ CUDA kernel failed: {e}")
+                if self.debug:
+                    print("Falling back to PyTorch implementation")
+                return self._pytorch_layernorm(x, weight, bias, eps)
         else:
             # Fallback to PyTorch implementation
+            if self.debug:
+                print("Using PyTorch fallback implementation")
             return self._pytorch_layernorm(x, weight, bias, eps)
     
     def backward(self, grad_output, x, weight, mean, rstd):
