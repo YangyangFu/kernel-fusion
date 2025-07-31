@@ -1,43 +1,10 @@
 # Multi-stage Docker build for fusion kernel development
 # Base image with CUDA support
-FROM nvidia/cuda:12.1-devel-ubuntu22.04 as base
+FROM pytorch/pytorch:2.7.1-cuda11.8-cudnn9-devel as base
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV CUDA_HOME=/usr/local/cuda
-ENV PATH=${CUDA_HOME}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    curl \
-    wget \
-    vim \
-    nano \
-    htop \
-    python3 \
-    python3-pip \
-    python3-dev \
-    libblas-dev \
-    liblapack-dev \
-    libhdf5-dev \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create symbolic link for python
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# Upgrade pip
-RUN python -m pip install --upgrade pip
-
-# Install Python dependencies for deep learning and CUDA kernel development
+# Install additional Python packages
 RUN pip install --no-cache-dir \
-    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 \
     numpy \
     scipy \
     matplotlib \
@@ -49,17 +16,9 @@ RUN pip install --no-cache-dir \
     ipywidgets \
     tqdm \
     pytest \
-    black \
-    flake8 \
-    mypy \
-    pre-commit \
     tensorboard \
     wandb \
-    pycuda \
-    numba \
-    cupy-cuda12x \
-    cuda-python
-
+    pycuda
 # Install CUDA kernel development tools
 RUN pip install --no-cache-dir \
     ninja \
@@ -73,10 +32,10 @@ RUN pip install --no-cache-dir \
 # Set working directory
 WORKDIR /workspace
 
-# Copy project files
-COPY . /workspace/
+# Note: Project files will be mounted via docker-compose volumes
+# This allows real-time editing and prevents copying files into the image
 
-# Create directories for development
+# Create directories for development (in case they don't exist)
 RUN mkdir -p /workspace/kernels \
              /workspace/tests \
              /workspace/benchmarks \
