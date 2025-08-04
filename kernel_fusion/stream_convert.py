@@ -18,11 +18,11 @@ import torch.nn as nn
 from typing import Optional, Dict, List, Tuple, Any
 import copy
 
-from kernel_fusion.auto_convert import (
+from .auto_convert import (
     ModelConverter, FusedLinearReLU, FusedLinearGELU, 
     FusedConv2dBNReLU, FusedLayerNormReLU, PatternDetector
 )
-from kernel_fusion.streams import StreamContext, StreamPriority
+from .streams import StreamContext, StreamPriority
 
 
 class StreamAwareFusedLinearReLU(FusedLinearReLU):

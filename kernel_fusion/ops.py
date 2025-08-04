@@ -7,7 +7,7 @@ dispatch to optimized CUDA kernels when available.
 import torch
 import torch.nn.functional as F
 from typing import Optional, Tuple, Union
-from . import EXTENSION_LOADED
+from .cuda_utils import EXTENSION_LOADED
 
 def fused_layer_norm_relu(
     input: torch.Tensor,

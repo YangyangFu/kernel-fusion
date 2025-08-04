@@ -4,7 +4,7 @@ This module is for advanced users who need fine-grained control over kernel exec
 """
 
 import torch
-from . import EXTENSION_LOADED
+from .cuda_utils import EXTENSION_LOADED
 
 class ElementwiseKernels:
     """Collection of elementwise operation kernels."""

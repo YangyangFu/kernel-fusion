@@ -1,24 +1,17 @@
 # Python package initialization
+
+__version__ = "0.1.0"
+__author__ = "Yangyang Fu"
+
+# Import CUDA utilities first (to avoid circular imports)
+from .cuda_utils import CUDA_AVAILABLE, EXTENSION_LOADED
+
+# Import operations and kernels
 from .ops import *
 from .kernels import *
 
 # Import automatic conversion utilities
 from .auto_convert import auto_convert_model, ModelConverter
 
-__version__ = "0.1.0"
-__author__ = "Your Name"
-
-# Automatically check CUDA availability
-import torch
-CUDA_AVAILABLE = torch.cuda.is_available()
-
-if CUDA_AVAILABLE:
-    try:
-        from . import _C
-        EXTENSION_LOADED = True
-    except ImportError as e:
-        EXTENSION_LOADED = False
-        print(f"Warning: CUDA extension not loaded: {e}")
-else:
-    EXTENSION_LOADED = False
-    print("Warning: CUDA not available, falling back to CPU implementations")
+# Import stream-aware conversion utilities
+from .stream_convert import auto_convert_with_streams, convert_model_with_streams
