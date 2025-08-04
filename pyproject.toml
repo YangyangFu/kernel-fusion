@@ -7,7 +7,7 @@ name = "kernel-fusion"
 version = "0.1.0"
 description = "Optimized fusion kernels for deep learning operations using direct CUDA programming"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Yangyang Fu", email = "fuyy2008@gmail.com"}
 ]
 readme = "README.md"
 license = {text = "MIT"}

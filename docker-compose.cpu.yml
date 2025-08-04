@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # Development environment without GPU (CPU-only fallback)
+  kernel-fusion-dev-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-dev-cpu
+    volumes:
+      # Mount source code for live development
+      - .:/workspace:z
+      # Cache pip packages to speed up reinstalls
+      - pip-cache:/root/.cache/pip
+      # Cache CMake builds to speed up compilation
+      - cmake-cache:/workspace/build
+      # Cache pytest results
+      - pytest-cache:/workspace/.pytest_cache
+    working_dir: /workspace
+    environment:
+      # Development environment variables
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+      # Disable CUDA for CPU-only mode
+      - CUDA_VISIBLE_DEVICES=""
+    stdin_open: true
+    tty: true
+    command: bash
+    networks:
+      - kernel-fusion-net
+
+  # Jupyter notebook server for interactive development (CPU-only)
+  kernel-fusion-jupyter-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-jupyter-cpu
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/workspace:z
+      - jupyter-data:/root/.jupyter
+      - pip-cache:/root/.cache/pip
+    working_dir: /workspace
+    environment:
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+      - CUDA_VISIBLE_DEVICES=""
+    command: >
+      bash -c "setup-dev-env &&
+               jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+    networks:
+      - kernel-fusion-net
+
+  # Testing environment (CPU-only)
+  kernel-fusion-test-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: kernel-fusion:dev
+    container_name: kernel-fusion-test-cpu
+    volumes:
+      - .:/workspace:z
+      - pip-cache:/root/.cache/pip
+      - pytest-cache:/workspace/.pytest_cache
+    working_dir: /workspace
+    environment:
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+      - CUDA_VISIBLE_DEVICES=""
+    command: >
+      bash -c "setup-dev-env &&
+               python -m pytest tests/ -v --tb=short"
+    networks:
+      - kernel-fusion-net
+
+volumes:
+  pip-cache:
+  cmake-cache:
+  pytest-cache:
+  jupyter-data:
+
+networks:
+  kernel-fusion-net:
+    driver: bridge

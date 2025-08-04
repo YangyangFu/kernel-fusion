@@ -26,6 +26,13 @@ services:
       - PYTHONPATH=/workspace
       - PYTHONUNBUFFERED=1
       - CUDA_LAUNCH_BLOCKING=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     stdin_open: true
     tty: true
     command: bash
@@ -43,7 +50,13 @@ services:
       - CUDA_VISIBLE_DEVICES=all
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     networks:
       - kernel-fusion-net
 
@@ -67,7 +80,13 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYTHONPATH=/workspace
       - PYTHONUNBUFFERED=1
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: >
       bash -c "setup-dev-env &&
                jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
@@ -92,7 +111,13 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYTHONPATH=/workspace
       - PYTHONUNBUFFERED=1
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: >
       bash -c "setup-dev-env &&
                python -m pytest tests/ -v --tb=short"
@@ -117,7 +142,13 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYTHONPATH=/workspace
       - PYTHONUNBUFFERED=1
-    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     command: >
       bash -c "setup-dev-env &&
                python examples/benchmark_fusion.py"
