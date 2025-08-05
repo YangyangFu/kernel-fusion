@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  cuda-tests:
+    build:
+      context: ../../  # Build from kernel-fusion root
+      dockerfile: tests/cuda/Dockerfile
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ../../:/workspace/kernel-fusion
+    working_dir: /workspace/kernel-fusion/tests/cuda
+    command: ./run_tests.sh
+    
+  # Interactive development container
+  cuda-dev:
+    build:
+      context: ../../
+      dockerfile: tests/cuda/Dockerfile
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ../../:/workspace/kernel-fusion
+    working_dir: /workspace/kernel-fusion/tests/cuda
+    command: /bin/bash
+    stdin_open: true
+    tty: true
