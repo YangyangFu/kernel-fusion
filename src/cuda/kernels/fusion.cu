@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <cublas_v2.h>
-#include "utils/cuda_utils.cuh"
+#include "../utils/cuda_utils.cuh"
 
 // Layer Norm + ReLU fused kernel
 template<typename T>

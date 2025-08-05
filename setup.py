@@ -24,30 +24,32 @@ libraries = []
 if USE_CUDA:
     include_dirs.extend([
         "/usr/local/cuda/include",
-        torch.utils.cpp_extension.include_paths()
     ])
+    include_dirs.extend(torch.utils.cpp_extension.include_paths())
+    
     library_dirs.extend([
         "/usr/local/cuda/lib64",
-        torch.utils.cpp_extension.library_paths()
     ])
+    library_dirs.extend(torch.utils.cpp_extension.library_paths())
+    
     libraries.extend(["cuda", "cudart", "cublas", "curand"])
 
 # Define source files
 cpp_sources = [
     "src/cpp/bindings.cpp",
-    "src/cpp/kernels/fusion_ops.cpp",
+    #"src/cpp/kernels/fusion_ops.cpp",
     "src/cpp/kernels/elementwise_ops.cpp", 
-    "src/cpp/kernels/reduction_ops.cpp",
-    "src/cpp/utils/tensor_utils.cpp",
+    #"src/cpp/kernels/reduction_ops.cpp",
+    #"src/cpp/utils/tensor_utils.cpp",
 ]
 
 cuda_sources = []
 if USE_CUDA:
     cuda_sources = [
         "src/cuda/kernels/elementwise.cu",
-        "src/cuda/kernels/reduction.cu",
-        "src/cuda/kernels/fusion.cu",
-        "src/cuda/utils/cuda_utils.cu",
+        #"src/cuda/kernels/reduction.cu",
+        #"src/cuda/kernels/fusion.cu",
+        #"src/cuda/utils/cuda_utils.cu",
     ]
 
 # Compiler flags
@@ -57,7 +59,8 @@ extra_compile_args = {
              "-gencode=arch=compute_70,code=sm_70",
              "-gencode=arch=compute_75,code=sm_75",
              "-gencode=arch=compute_80,code=sm_80",
-             "-gencode=arch=compute_86,code=sm_86"]
+             "-gencode=arch=compute_86,code=sm_86",
+             "-gencode=arch=compute_120,code=sm_120"]
 }
 
 if USE_CUDA:
@@ -80,7 +83,7 @@ else:
 setup(
     name="kernel-fusion",
     version="0.1.0",
-    author="Your Name",
+    author="Yangyang Fu",
     author_email="fuyy2008@gmail.com",
     description="Optimized fusion kernels for deep learning operations",
     long_description=open("README.md").read(),

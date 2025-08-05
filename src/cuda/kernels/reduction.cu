@@ -1,6 +1,6 @@
 #include <torch/extension.h>
 #include <cuda_runtime.h>
-#include "utils/cuda_utils.cuh"
+#include "../utils/cuda_utils.cuh"
 
 // Optimized sum of squares reduction kernel
 template<typename T>

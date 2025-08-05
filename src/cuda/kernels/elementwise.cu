@@ -1,6 +1,6 @@
 #include <torch/extension.h>
 #include <cuda_runtime.h>
-#include "utils/cuda_utils.cuh"
+#include "../utils/cuda_utils.cuh"
 
 // Elementwise add + relu kernel
 template<typename T>
@@ -26,7 +26,7 @@ __global__ void elementwise_mul_tanh_kernel(
 ) {
     CUDA_KERNEL_LOOP(idx, numel) {
         T product = a[idx] * b[idx];
-        output[idx] = tanhf(product);
+        output[idx] = cuda_tanh(product);
     }
 }
 
